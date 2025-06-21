@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Buku</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Daftar Buku</h1>
+    <form id="bookForm">
+      <input type="text" id="title" placeholder="Judul Buku" required />
+      <select id="status">
+        <option value="Belum Dibaca">Belum Dibaca</option>
+        <option value="Sedang Dibaca">Sedang Dibaca</option>
+        <option value="Selesai Dibaca">Selesai Dibaca</option>
+      </select>
+      <button type="submit">Tambah</button>
+    </form>
+    <button onclick="exportExcel()">Export ke Excel</button>
+    <ul id="bookList"></ul>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <script src="dashboard.js"></script>
+</body>
+</html>
