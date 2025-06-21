@@ -1,8 +1,8 @@
 const token = localStorage.getItem('gh_token');
 if (!token) window.location.href = 'index.html';
 
-const owner = 'USERNAME_KAMU'; // ganti dengan username GitHub kamu
-const repo = 'REPO_KAMU'; // ganti dengan nama repo kamu
+const owner = 'rizki99m'; // ganti dengan username GitHub kamu
+const repo = 'Tata-Book-Tracker'; // ganti dengan nama repo kamu
 const path = 'books.json';
 let sha = '';
 
