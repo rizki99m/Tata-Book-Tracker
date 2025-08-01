@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Buku</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script defer src="dashboard.js"></script>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>TATA's BOOK Dashboard</h1>
+    </header>
+
+    <!-- Bar User Info dan Logout -->
+    <div class="user-bar">
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <!-- Bar Search dan Tambah Buku -->
+    <div class="top-bar">
+      <button id="addBookBtn">Tambah Buku Baru</button>
+      <div class="search-group">
+        <input type="text" id="searchInput" placeholder="Cari judul atau penulis...">
+      </div>
+    </div>
+
+    <!-- Form Tambah Buku -->
+    <div id="addBookForm" class="add-book-form" style="display: none;">
+      <input type="text" id="newTitle" placeholder="Judul buku">
+      <input type="text" id="newAuthor" placeholder="Penulis">
+      <button id="submitBookBtn">Simpan</button>
+    </div>
+
+    <!-- Tabel Buku -->
+    <table id="bookTable">
+      <thead>
+        <tr>
+          <th>Judul</th>
+          <th>Penulis</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data buku akan dirender lewat JS -->
+      </tbody>
+    </table>
+
+  </div>
+</body>
+</html>
