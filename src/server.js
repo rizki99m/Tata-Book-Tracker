@@ -54,7 +54,7 @@ app.post('/api/login', async (req, res) => {
 
   return res.status(200).json({ message: 'Login berhasil', user: { id: user.id, username: user.username } });
 });
-
+// GET all books for a user
 app.get('/books', async (req, res) => {
   try {
     const userId = req.query.user_id;
@@ -70,35 +70,60 @@ app.get('/books', async (req, res) => {
 
     if (error) throw error;
 
-    res.json({ data }); // dibungkus dalam objek { data }
+    res.json({ data });
   } catch (err) {
-    console.error('GET /books error:', err.message); // tampilkan error di console
+    console.error('GET /books error:', err.message);
     res.status(500).json({ error: 'Internal server error', detail: err.message });
   }
 });
 
-
 // POST new book
 app.post('/books', async (req, res) => {
-  const { book_name, book_author, user_id, is_done } = req.body;
+  const {
+    book_name,
+    book_author,
+    book_genre,
+    status,
+    book_desc,
+    user_id
+  } = req.body;
 
   const { data, error } = await supabase
     .from('book')
-    .insert([{ book_name, book_author, user_id, is_done }])
+    .insert([{
+      book_name,
+      book_author,
+      book_genre,
+      status,
+      book_desc,
+      user_id
+    }])
     .select();
 
   if (error) return res.status(500).json({ error });
   res.status(201).json(data[0]);
 });
 
-// PUT update book
+// PUT update existing book
 app.put('/books/:id', async (req, res) => {
   const { id } = req.params;
-  const { book_name, book_author } = req.body;
+  const {
+    book_name,
+    book_author,
+    book_genre,
+    status,
+    book_desc
+  } = req.body;
 
   const { data, error } = await supabase
     .from('book')
-    .update({ book_name, book_author })
+    .update({
+      book_name,
+      book_author,
+      book_genre,
+      status,
+      book_desc
+    })
     .eq('id', id)
     .select();
 

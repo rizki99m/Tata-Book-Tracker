@@ -1,53 +1,118 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Buku</title>
-  <link rel="stylesheet" href="dashboard.css">
-  <script defer src="dashboard.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tata Personal Library</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <div class="container">
+<body class="bg-gray-50 text-gray-800">
 
-    <header>
-      <h1>TATA's BOOK Dashboard</h1>
-    </header>
-
-    <!-- Bar User Info dan Logout -->
-    <div class="user-bar">
-      <button id="logoutBtn">Logout</button>
+  <!-- Header -->
+  <header class="flex justify-between items-center px-6 py-4 bg-white shadow">
+    <div>
+      <h1 class="text-xl font-bold text-violet-600">Tata Personal Library</h1>
     </div>
+    <div class="flex gap-2">
+      <button id="addBookBtn" class="px-4 py-2 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-sm font-medium">
+        Tambah Buku
+      </button>
+      <button id="logoutBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium">
+        Logout
+      </button>
+    </div>
+  </header>
 
-    <!-- Bar Search dan Tambah Buku -->
-    <div class="top-bar">
-      <button id="addBookBtn">Tambah Buku Baru</button>
-      <div class="search-group">
-        <input type="text" id="searchInput" placeholder="Cari judul atau penulis...">
+  <!-- Summary Cards -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+    <div class="bg-blue-600 text-white p-4 rounded-xl shadow">
+      <p class="text-sm">Total Buku</p>
+      <h2 class="text-2xl font-bold" id="totalCount">0</h2>
+      <p class="text-xs">Koleksi lengkap</p>
+    </div>
+    <div class="bg-orange-500 text-white p-4 rounded-xl shadow">
+      <p class="text-sm">Belum Dibaca</p>
+      <h2 class="text-2xl font-bold" id="belumCount">0</h2>
+      <p class="text-xs">Menunggu dibaca</p>
+    </div>
+    <div class="bg-purple-600 text-white p-4 rounded-xl shadow">
+      <p class="text-sm">Sedang Dibaca</p>
+      <h2 class="text-2xl font-bold" id="sedangCount">0</h2>
+      <p class="text-xs">Dalam progress</p>
+    </div>
+    <div class="bg-green-600 text-white p-4 rounded-xl shadow">
+      <p class="text-sm">Selesai</p>
+      <h2 class="text-2xl font-bold" id="selesaiCount">0</h2>
+      <p class="text-xs">Telah selesai</p>
+    </div>
+  </section>
+
+  <!-- Search -->
+  <section class="px-6 py-4">
+    <input id="searchInput" type="text" placeholder="Cari berdasarkan judul atau penulis..."
+      class="w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring focus:border-violet-400 mb-4" />
+  </section>
+
+  <!-- Form Tambah/Edit Buku -->
+ <!-- MODAL FORM TAMBAH/EDIT -->
+  <div id="addBookForm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-xl relative">
+      
+      <!-- Tombol X untuk tutup -->
+      <button onclick="toggleForm(false)" class="absolute top-3 right-3 text-gray-400 hover:text-black text-lg">✕</button>
+      
+      <h2 class="text-xl font-bold mb-4">Tambah Buku Baru</h2>
+      <input type="hidden" id="editId" />
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Judul Buku *</label>
+          <input id="newTitle" type="text" class="w-full border border-gray-300 rounded p-2" placeholder="Masukkan judul buku" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Penulis *</label>
+          <input id="newAuthor" type="text" class="w-full border border-gray-300 rounded p-2" placeholder="Masukkan nama penulis" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Genre *</label>
+          <input id="newGenre" type="text" class="w-full border border-gray-300 rounded p-2" placeholder="Contoh: Fiksi, Non-fiksi, Romance, Thriller" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Status Baca</label>
+          <select id="newStatus" class="w-full border border-gray-300 rounded p-2">
+            <option value="0">Belum Dibaca</option>
+            <option value="1">Sedang Dibaca</option>
+            <option value="2">Sudah Dibaca</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium">Catatan (Opsional)</label>
+          <textarea id="newDesc" rows="3" class="w-full border border-gray-300 rounded p-2" placeholder="Tambahkan catatan pribadi tentang buku ini..."></textarea>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="toggleForm(false)" class="px-4 py-2 bg-gray-200 text-gray-800 rounded">Batal</button>
+          <button id="submitBookBtn" class="px-4 py-2 bg-black text-white rounded">Tambah Buku</button>
+        </div>
       </div>
     </div>
-
-    <!-- Form Tambah Buku -->
-    <div id="addBookForm" class="add-book-form" style="display: none;">
-      <input type="text" id="newTitle" placeholder="Judul buku">
-      <input type="text" id="newAuthor" placeholder="Penulis">
-      <button id="submitBookBtn">Simpan</button>
-    </div>
-
-    <!-- Tabel Buku -->
-    <table id="bookTable">
-      <thead>
-        <tr>
-          <th>Judul</th>
-          <th>Penulis</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Data buku akan dirender lewat JS -->
-      </tbody>
-    </table>
-
   </div>
+
+
+  <!-- Book Cards -->
+  <section id="bookContainer" class="px-6 py-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Kartu akan dirender dari JS -->
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-xs text-gray-400 text-center py-6">Made with Love</footer>
+
+  <!-- Script -->
+  <script src="dashboard.js"></script>
 </body>
 </html>
