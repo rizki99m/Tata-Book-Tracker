@@ -66,8 +66,8 @@ app.get('/books', async (req, res) => {
       .from('book')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
+      .order('created_at', { ascending: false })
+      .range(0, 999);
     if (error) throw error;
 
     res.json({ data });
@@ -83,7 +83,7 @@ app.post('/books', async (req, res) => {
     book_name,
     book_author,
     book_genre,
-    status,
+    book_status,
     book_desc,
     user_id
   } = req.body;
@@ -94,14 +94,17 @@ app.post('/books', async (req, res) => {
       book_name,
       book_author,
       book_genre,
-      status,
+      book_status,
       book_desc,
       user_id
     }])
     .select();
 
-  if (error) return res.status(500).json({ error });
-  res.status(201).json(data[0]);
+  if (error) {
+  console.error('Supabase error:', error.message);
+  return res.status(500).json({ error });
+}
+  return res.status(204).send(); // ← ini WAJIB ditambahkan agar response dikirim
 });
 
 // PUT update existing book
@@ -111,7 +114,7 @@ app.put('/books/:id', async (req, res) => {
     book_name,
     book_author,
     book_genre,
-    status,
+    book_status,
     book_desc
   } = req.body;
 
@@ -121,14 +124,17 @@ app.put('/books/:id', async (req, res) => {
       book_name,
       book_author,
       book_genre,
-      status,
+      book_status,
       book_desc
     })
     .eq('id', id)
     .select();
 
-  if (error) return res.status(500).json({ error });
-  res.json(data[0]);
+  if (error) {
+  console.error('Supabase error:', error.message);
+  return res.status(500).json({ error });
+}
+  return res.status(204).send(); // ← ini WAJIB ditambahkan agar response dikirim
 });
 
 // DELETE book
@@ -140,6 +146,9 @@ app.delete('/books/:id', async (req, res) => {
     .delete()
     .eq('id', id);
 
-  if (error) return res.status(500).json({ error });
-  res.status(204).send();
+  if (error) {
+  console.error('Supabase error:', error.message);
+  return res.status(500).json({ error });
+}
+  return res.status(204).send(); // ← ini WAJIB ditambahkan agar response dikirim
 });

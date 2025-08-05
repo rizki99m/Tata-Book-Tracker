@@ -1,4 +1,3 @@
-// dashboard.js
 const user = JSON.parse(localStorage.getItem('user'));
 if (!user) {
   window.location.href = 'index.html';
@@ -42,36 +41,64 @@ document.addEventListener("DOMContentLoaded", () => {
       inputNewStatus.value = "0";
       inputNewDesc.value = "";
     }
-}
+  }
 
-window.toggleForm = toggleForm;
+  window.toggleForm = toggleForm;
 
   async function fetchBooks() {
     const res = await fetch(`/books?user_id=${user.id}`);
     const json = await res.json();
     books = json.data || [];
-    renderBooks(books);
+    renderBooks();
     updateSummary(books);
   }
 
-  function renderBooks(data) {
-    container.innerHTML = "";
-    data.forEach(book => {
-      const card = document.createElement("div");
-      card.className = "bg-white rounded-xl p-4 shadow relative";
-      card.innerHTML = `
-        <button onclick="startEditBook(${book.id})" class="absolute top-2 right-2 text-sm text-gray-400 hover:text-black">⋮</button>
-        <h3 class="font-semibold">${book.book_name}</h3>
-        <p class="text-sm text-gray-600">${book.book_author}</p>
-        ${renderStatus(book.status)}
-        <p class="text-sm text-gray-500 mt-1">Genre: ${book.book_genre || '-'}</p>
-        <p class="text-sm text-gray-500">Ditambahkan: ${new Date(book.created_at).toLocaleDateString('id-ID')}</p>
-        ${book.book_desc ? `<p class="text-sm text-gray-700 mt-2">Catatan: ${book.book_desc}</p>` : ''}
-      `;
-      container.appendChild(card);
+  let activeFilterStatus = "all"; 
+
+  function renderBooks() {
+  const keyword = searchInput.value.toLowerCase();
+  const filtered = books.filter(book => {
+    const matchSearch = book.book_name.toLowerCase().includes(keyword) || book.book_author.toLowerCase().includes(keyword);
+
+    const matchStatus = activeFilterStatus === "all" || String(book.book_status) === activeFilterStatus;
+
+    return matchSearch && matchStatus;
+  });
+
+  container.innerHTML = "";
+  filtered.forEach(book => {
+    const card = document.createElement("div");
+    card.className = "bg-white rounded-xl p-4 shadow relative";
+    card.innerHTML = `
+      <div class="absolute top-2 right-2">
+        <button onclick="toggleDropdown(${book.id})" class="text-lg text-gray-500 hover:text-black">⋮</button>
+        <div id="dropdown-${book.id}" class="hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-md z-50">
+          <button onclick="startEditBook(${book.id})" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            ✏️ Edit
+          </button>
+          <button onclick="deleteBook(${book.id})" class="w-full px-4 py-2 text-left hover:bg-red-100 text-red-600 flex items-center gap-2">
+            🗑️ Hapus
+          </button>
+        </div>
+      </div>
+      <h3 class="font-semibold">${book.book_name}</h3>
+      <p class="text-sm text-gray-600">${book.book_author}</p>
+      ${renderStatus(book.book_status)}
+      <p class="text-sm text-gray-500 mt-1">Genre: ${book.book_genre || '-'}</p>
+      <p class="text-sm text-gray-500">Ditambahkan: ${new Date(book.created_at).toLocaleDateString('id-ID')}</p>
+      ${book.book_desc ? `<p class="text-sm text-gray-700 mt-2">Catatan: ${book.book_desc}</p>` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+  window.toggleDropdown = function(id) {
+    document.querySelectorAll('[id^="dropdown-"]').forEach(drop => {
+      if (drop.id !== `dropdown-${id}`) drop.classList.add("hidden");
     });
+    const dropdown = document.getElementById(`dropdown-${id}`);
+    dropdown.classList.toggle("hidden");
   }
-  
 
   function renderStatus(status) {
     switch (status) {
@@ -87,33 +114,29 @@ window.toggleForm = toggleForm;
   }
 
   function updateSummary(data) {
+    console.log("JUMLAH BUKU ", data.length);
     totalCount.textContent = data.length;
-    belumCount.textContent = data.filter(b => b.status === 0).length;
-    sedangCount.textContent = data.filter(b => b.status === 1).length;
-    selesaiCount.textContent = data.filter(b => b.status === 2).length;
+    belumCount.textContent = data.filter(b => b.book_status === 0).length;
+    sedangCount.textContent = data.filter(b => b.book_status === 1).length;
+    selesaiCount.textContent = data.filter(b => b.book_status === 2).length;
   }
 
   searchInput.addEventListener("input", () => {
-    const keyword = searchInput.value.toLowerCase();
-    const filtered = books.filter(book =>
-      book.book_name.toLowerCase().includes(keyword) ||
-      book.book_author.toLowerCase().includes(keyword)
-    );
-    renderBooks(filtered);
+  renderBooks();
   });
 
   addBookBtn.addEventListener("click", () => {
-  const isEditing = inputEditId.value !== "";
-  if (!isEditing) {
-    inputNewTitle.value = "";
-    inputNewAuthor.value = "";
-    inputNewGenre.value = "";
-    inputNewStatus.value = "0";
-    inputNewDesc.value = "";
-    inputEditId.value = "";
-  }
-  toggleForm();
-});
+    const isEditing = inputEditId.value !== "";
+    if (!isEditing) {
+      inputNewTitle.value = "";
+      inputNewAuthor.value = "";
+      inputNewGenre.value = "";
+      inputNewStatus.value = "0";
+      inputNewDesc.value = "";
+      inputEditId.value = "";
+    }
+    toggleForm();
+  });
 
   submitBookBtn.addEventListener("click", async () => {
     const title = inputNewTitle.value.trim();
@@ -132,10 +155,11 @@ window.toggleForm = toggleForm;
       book_name: title,
       book_author: author,
       book_genre: genre,
-      status,
+      book_status : status,
       book_desc: desc
     };
 
+    console.log("Payload yang dikirim:", payload); 
     try {
       let res;
       if (editId) {
@@ -169,7 +193,6 @@ window.toggleForm = toggleForm;
       alert("Terjadi kesalahan saat menyimpan data.");
     }
 
-    // Reset & tutup form
     toggleForm(false);
     addBookBtn.textContent = "Tambah Buku";
     inputNewTitle.value = "";
@@ -179,10 +202,8 @@ window.toggleForm = toggleForm;
     inputNewDesc.value = "";
     inputEditId.value = "";
 
-    // Refresh daftar
     fetchBooks();
-});
-
+  });
 
   window.startEditBook = function(id) {
     const book = books.find(b => b.id === id);
@@ -192,17 +213,48 @@ window.toggleForm = toggleForm;
     inputNewTitle.value = book.book_name;
     inputNewAuthor.value = book.book_author;
     inputNewGenre.value = book.book_genre || "";
-    inputNewStatus.value = book.status || "0";
+    inputNewStatus.value = book.book_status || "0";
     inputNewDesc.value = book.book_desc || "";
 
-    // Buka form menggunakan toggleForm
     toggleForm(true);
+  }
+
+  window.deleteBook = async function(id) {
+    if (confirm("Apakah kamu yakin ingin menghapus buku ini?")) {
+      const res = await fetch(`/books/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        alert("Buku berhasil dihapus.");
+        fetchBooks();
+      } else {
+        alert("Gagal menghapus buku.");
+      }
+    }
   }
 
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("user");
     window.location.href = "index.html";
   });
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    activeFilterStatus = btn.getAttribute("data-status");
+
+    // Update tampilan tombol aktif
+    document.querySelectorAll(".filter-btn").forEach(b => {
+      b.classList.remove("bg-gradient-to-r", "from-violet-500", "to-blue-500", "text-white");
+      b.classList.add("border", "border-gray-300", "text-black");
+    });
+
+    btn.classList.remove("border", "border-gray-300", "text-black");
+    btn.classList.add("bg-gradient-to-r", "from-violet-500", "to-blue-500", "text-white");
+
+    renderBooks(); // render ulang sesuai filter
+  });
+});
 
   fetchBooks();
 });

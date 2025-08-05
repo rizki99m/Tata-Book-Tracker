@@ -47,11 +47,20 @@
     </div>
   </section>
 
-  <!-- Search -->
-  <section class="px-6 py-4">
-    <input id="searchInput" type="text" placeholder="Cari berdasarkan judul atau penulis..."
-      class="w-full p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring focus:border-violet-400 mb-4" />
-  </section>
+  <!-- Search dan Filter -->
+<section class="px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+  <!-- Input Pencarian -->
+  <input id="searchInput" type="text" placeholder="Cari buku berdasarkan judul, penulis, atau genre..."
+    class="flex-1 p-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring focus:border-violet-400" />
+
+  <!-- Filter Status -->
+  <div class="flex gap-2">
+    <button data-status="all" class="filter-btn px-4 py-2 bg-gradient-to-r from-violet-500 to-blue-500 text-white rounded-lg text-sm font-medium">Semua</button>
+    <button data-status="0" class="filter-btn px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium">Belum Dibaca</button>
+    <button data-status="1" class="filter-btn px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium">Sedang Dibaca</button>
+    <button data-status="2" class="filter-btn px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium">Selesai</button>
+  </div>
+</section>
 
   <!-- Form Tambah/Edit Buku -->
  <!-- MODAL FORM TAMBAH/EDIT -->
