@@ -73,10 +73,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="absolute top-2 right-2">
         <button onclick="toggleDropdown(${book.id})" class="text-lg text-gray-500 hover:text-black">⋮</button>
         <div id="dropdown-${book.id}" class="hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-md z-50">
-          <button onclick="startEditBook(${book.id})" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+          <button onclick="startEditBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             ✏️ Edit
           </button>
-          <button onclick="deleteBook(${book.id})" class="w-full px-4 py-2 text-left hover:bg-red-100 text-red-600 flex items-center gap-2">
+          <button onclick="deleteBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-red-100 text-red-600 flex items-center gap-2">
             🗑️ Hapus
           </button>
         </div>
@@ -98,7 +98,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     const dropdown = document.getElementById(`dropdown-${id}`);
     dropdown.classList.toggle("hidden");
-  }
+  };
+
+  window.closeDropdown = function () {
+    document.querySelectorAll('[id^="dropdown-"]').forEach(drop => {
+      drop.classList.add("hidden");
+    });
+  };
+
+  document.addEventListener("click", function (e) {
+    const isDropdownBtn = e.target.closest("button[onclick^='toggleDropdown']");
+    const isInsideDropdown = e.target.closest("div[id^='dropdown-']");
+    
+    if (!isDropdownBtn && !isInsideDropdown) {
+      closeDropdown();
+    }
+  });
 
   function renderStatus(status) {
     switch (status) {
