@@ -28,6 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let isMobileView = window.innerWidth < 768;
 
+  let videoStream;
+
+  window.toggleAddBookDropdown = function () {
+    const dropdown = document.getElementById("addBookDropdown");
+    dropdown.classList.toggle("hidden");
+  };
+
   function toggleForm(force = null) {
     const form = document.getElementById("addBookForm");
     const show = force !== null ? force : form.classList.contains("hidden");
@@ -47,6 +54,86 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  window.startScanISBN = async function () {
+    toggleAddBookDropdown();
+    document.getElementById("scanModal").classList.remove("hidden");
+
+    const video = document.getElementById("preview");
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      video.srcObject = videoStream;
+    } catch (err) {
+      alert("Gagal mengakses kamera");
+      console.error(err);
+    }
+  }
+
+  window.captureAndDecode = async function () {
+    const video = document.getElementById("preview");
+    const canvas = document.getElementById("captureCanvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageDataUrl = canvas.toDataURL("image/png");
+
+    Quagga.decodeSingle({
+      src: imageDataUrl,
+      numOfWorkers: 0,
+      decoder: {
+        readers: ["ean_reader"]
+      },
+      locate: true
+    }, async function(result) {
+      if (result && result.codeResult) {
+        const code = result.codeResult.code;
+        console.log("✅ ISBN Terbaca:", code);
+        if (/^\d{10,13}$/.test(code)) {
+          await fetchBookFromISBN(code);
+          stopScan();
+          toggleForm(true);
+        } else {
+          alert("Kode terbaca, tapi bukan ISBN valid");
+        }
+      } else {
+        alert("Gagal mendeteksi barcode dari gambar");
+        console.warn(result);
+      }
+    });
+  }
+
+
+
+  async function fetchBookFromISBN(isbn) {
+    try {
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+      const data = await res.json();
+      const book = data[`ISBN:${isbn}`];
+
+      if (!book) return alert("Data buku tidak ditemukan");
+
+      document.getElementById("newTitle").value = book.title || '';
+      document.getElementById("newAuthor").value = book.authors?.map(a => a.name).join(', ') || '';
+      document.getElementById("newGenre").value = book.subjects?.[0]?.name || '';
+      document.getElementById("newDesc").value = `Diterbitkan oleh ${book.publishers?.[0]?.name || '-'} (${book.publish_date || '-'})`;
+    } catch (err) {
+      alert("Gagal mengambil data buku dari ISBN");
+      console.error(err);
+    }
+  }
+
+  window.stopScan = function () {
+    if (videoStream) {
+      const tracks = videoStream.getTracks();
+      tracks.forEach(track => track.stop());
+    }
+    document.getElementById("scanModal").classList.add("hidden");
+  }
+
   window.toggleForm = toggleForm;
 
   async function fetchBooks() {
@@ -58,6 +145,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let activeFilterStatus = "all"; 
+
+ 
 
   function renderBooks() {
   const keyword = searchInput.value.toLowerCase();
@@ -165,9 +254,17 @@ function renderStatusText(status) {
   document.addEventListener("click", function (e) {
     const isDropdownBtn = e.target.closest("button[onclick^='toggleDropdown']");
     const isInsideDropdown = e.target.closest("div[id^='dropdown-']");
+    const dropdown = document.getElementById("addBookDropdown");
+    const button = e.target.closest("button[onclick='toggleAddBookDropdown()']");
+    const insideDropdown = e.target.closest("#addBookDropdown");
     
+
     if (!isDropdownBtn && !isInsideDropdown) {
       closeDropdown();
+    }
+
+    if (!button && !insideDropdown) {
+     dropdown.classList.add("hidden");
     }
   });
 
@@ -197,6 +294,7 @@ function renderStatusText(status) {
   });
 
   addBookBtn.addEventListener("click", () => {
+    document.getElementById("addBookDropdown").classList.add("hidden");
     const isEditing = inputEditId.value !== "";
     if (!isEditing) {
       inputNewTitle.value = "";
@@ -332,6 +430,8 @@ function renderStatusText(status) {
     renderBooks(); // render ulang sesuai filter
   });
 });
+
+
 
   fetchBooks();
 });
