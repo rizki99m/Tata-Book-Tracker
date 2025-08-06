@@ -24,6 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let books = [];
 
+  let isMobileView = window.innerWidth < 768;
+
   function toggleForm(force = null) {
     const form = document.getElementById("addBookForm");
     const show = force !== null ? force : form.classList.contains("hidden");
@@ -59,37 +61,89 @@ document.addEventListener("DOMContentLoaded", () => {
   const keyword = searchInput.value.toLowerCase();
   const filtered = books.filter(book => {
     const matchSearch = book.book_name.toLowerCase().includes(keyword) || book.book_author.toLowerCase().includes(keyword);
-
     const matchStatus = activeFilterStatus === "all" || String(book.book_status) === activeFilterStatus;
-
     return matchSearch && matchStatus;
   });
 
   container.innerHTML = "";
-  filtered.forEach(book => {
-    const card = document.createElement("div");
-    card.className = "bg-white rounded-xl p-4 shadow relative";
-    card.innerHTML = `
-      <div class="absolute top-2 right-2">
-        <button onclick="toggleDropdown(${book.id})" class="text-lg text-gray-500 hover:text-black">⋮</button>
-        <div id="dropdown-${book.id}" class="hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-md z-50">
-          <button onclick="startEditBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
-            ✏️ Edit
-          </button>
-          <button onclick="deleteBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-red-100 text-red-600 flex items-center gap-2">
-            🗑️ Hapus
-          </button>
+
+  if (isMobileView) {
+    // Render cards (mobile)
+    filtered.forEach(book => {
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-xl p-4 shadow relative";
+      card.innerHTML = `
+        <div class="absolute top-2 right-2">
+          <button onclick="toggleDropdown(${book.id})" class="text-lg text-gray-500 hover:text-black">⋮</button>
+          <div id="dropdown-${book.id}" class="hidden absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-md z-50">
+            <button onclick="startEditBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+              ✏️ Edit
+            </button>
+            <button onclick="deleteBook(${book.id}); closeDropdown()" class="w-full px-4 py-2 text-left hover:bg-red-100 text-red-600 flex items-center gap-2">
+              🗑️ Hapus
+            </button>
+          </div>
         </div>
-      </div>
-      <h3 class="font-semibold">${book.book_name}</h3>
-      <p class="text-sm text-gray-600">${book.book_author}</p>
-      ${renderStatus(book.book_status)}
-      <p class="text-sm text-gray-500 mt-1">Genre: ${book.book_genre || '-'}</p>
-      <p class="text-sm text-gray-500">Ditambahkan: ${new Date(book.created_at).toLocaleDateString('id-ID')}</p>
-      ${book.book_desc ? `<p class="text-sm text-gray-700 mt-2">Catatan: ${book.book_desc}</p>` : ''}
+        <h3 class="font-semibold">${book.book_name}</h3>
+        <p class="text-sm text-gray-600">${book.book_author}</p>
+        ${renderStatus(book.book_status)}
+        <p class="text-sm text-gray-500 mt-1">Genre: ${book.book_genre || '-'}</p>
+        <p class="text-sm text-gray-500">Ditambahkan: ${new Date(book.created_at).toLocaleDateString('id-ID')}</p>
+        ${book.book_desc ? `<p class="text-sm text-gray-700 mt-2">Catatan: ${book.book_desc}</p>` : ''}
+      `;
+      container.appendChild(card);
+    });
+
+  } else {
+    // Render table (desktop)
+    const wrapper = document.createElement("div");
+    wrapper.className = "overflow-x-auto w-full";
+
+    const table = document.createElement("table");
+    table.className = "w-full table-fixed bg-white rounded-xl shadow text-sm";
+
+    table.innerHTML = `
+      <thead class="bg-gray-100 text-left">
+      <tr>
+        <th class="p-3 w-1/5">Judul</th>
+        <th class="p-3 w-1/5">Penulis</th>
+        <th class="p-3 w-1/6">Genre</th>
+        <th class="p-3 w-1/6">Status</th>
+        <th class="p-3 w-1/4">Catatan</th>
+        <th class="p-3 w-1/6">Ditambahkan</th>
+        <th class="p-3 w-1/6">Aksi</th>
+      </tr>
+    </thead>
+      <tbody>
+        ${filtered.map(book => `
+          <tr class="border-t">
+            <td class="p-3">${book.book_name}</td>
+            <td class="p-3">${book.book_author}</td>
+            <td class="p-3">${book.book_genre || '-'}</td>
+            <td class="p-3">${renderStatusText(book.book_status)}</td>
+            <td class="p-3">${book.book_desc || '-'}</td>
+            <td class="p-3">${new Date(book.created_at).toLocaleDateString('id-ID')}</td>
+            <td class="p-3">
+              <button onclick="startEditBook(${book.id})" class="text-blue-600 hover:underline mr-2">Edit</button>
+              <button onclick="deleteBook(${book.id})" class="text-red-600 hover:underline">Hapus</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
     `;
-    container.appendChild(card);
-  });
+
+    wrapper.appendChild(table);
+    container.appendChild(wrapper);
+  }
+}
+
+function renderStatusText(status) {
+  switch (status) {
+    case 0: return "Belum Dibaca";
+    case 1: return "Sedang Dibaca";
+    case 2: return "Selesai";
+    default: return "-";
+  }
 }
 
   window.toggleDropdown = function(id) {
@@ -252,6 +306,12 @@ document.addEventListener("DOMContentLoaded", () => {
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("user");
     window.location.href = "index.html";
+  });
+
+  window.addEventListener('resize', () => {
+    const prevView = isMobileView;
+    isMobileView = window.innerWidth < 768;
+    if (prevView !== isMobileView) renderBooks(); // Rerender jika berpindah mobile <-> desktop
   });
 
   document.querySelectorAll(".filter-btn").forEach(btn => {
