@@ -37,8 +37,6 @@ const supabase = createClient(
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
-  console.log("Login attempt:", username, password);
-
   const { data: user, error } = await supabase
     .from('user') 
     .select('*')
@@ -46,13 +44,11 @@ app.post('/api/login', async (req, res) => {
     .eq('password', password)
     .single();
 
-  console.log("Supabase response:", { user, error });
-
   if (error || !user) {
     return res.status(401).json({ error: 'Username atau password salah' });
   }
 
-  return res.status(200).json({ message: 'Login berhasil', user: { id: user.id, username: user.username } });
+  return res.status(200).json({ message: 'Login berhasil', user: { id: user.id, username: user.username, name : user.name } });
 });
 // GET all books for a user
 app.get('/books', async (req, res) => {

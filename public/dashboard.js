@@ -1,6 +1,8 @@
 const user = JSON.parse(localStorage.getItem('user'));
 if (!user) {
   window.location.href = 'index.html';
+}else{
+  document.getElementById("pageTitle").innerText  = `Hai ${user.name}, ini perpustakaanmu!`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
