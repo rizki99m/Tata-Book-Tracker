@@ -148,3 +148,67 @@ app.delete('/books/:id', async (req, res) => {
 }
   return res.status(204).send(); // ← ini WAJIB ditambahkan agar response dikirim
 });
+
+function normalizeOpenLibrary(olBook, isbn) {
+  return {
+    source: "openlibrary",
+    isbn,
+    title: olBook?.title ?? "",
+    authors: olBook?.authors?.map(a => a.name) ?? [],
+    publisher: olBook?.publishers?.[0]?.name ?? "",
+    publishedDate: olBook?.publish_date ?? "",
+    description: "", // OL 'data' endpoint sering kosong deskripsi
+    categories: olBook?.subjects?.map(s => s.name) ?? [],
+    cover: olBook?.cover?.large || olBook?.cover?.medium || olBook?.cover?.small || ""
+  };
+}
+
+function normalizeGoogleBooks(v, isbn) {
+  return {
+    source: "google_books",
+    isbn,
+    title: v?.title ?? "",
+    authors: v?.authors ?? [],
+    publisher: v?.publisher ?? "",
+    publishedDate: v?.publishedDate ?? "",
+    description: v?.description ?? "",
+    categories: v?.categories ?? [],
+    cover: v?.imageLinks?.thumbnail || v?.imageLinks?.smallThumbnail || ""
+  };
+}
+
+// --- ROUTE: /api/isbn/:isbn ---
+app.get("/api/isbn/:isbn", async (req, res) => {
+  const isbn = req.params.isbn?.trim();
+
+  if (!isbn) return res.status(400).json({ error: "ISBN wajib diisi" });
+
+  // 1) coba OpenLibrary dulu (gratis & tanpa key)
+  try {
+    const ol = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+    const olJson = await ol.json();
+    const olBook = olJson[`ISBN:${isbn}`];
+    if (olBook) {
+      return res.json({ ok: true, data: normalizeOpenLibrary(olBook, isbn) });
+    }
+  } catch (e) {
+    console.warn("OpenLibrary error:", e);
+  }
+
+  // 2) fallback: Google Books (perlu key di .env)
+  try {
+    const key = process.env.GOOGLE_BOOKS_KEY;
+    const gb = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${key ? `&key=${key}` : ""}`);
+    const gbJson = await gb.json();
+
+    if (gbJson?.totalItems > 0) {
+      const v = gbJson.items[0]?.volumeInfo;
+      return res.json({ ok: true, data: normalizeGoogleBooks(v, isbn) });
+    }
+  } catch (e) {
+    console.warn("Google Books error:", e);
+  }
+
+  // 3) kalau dua-duanya miss
+  return res.status(404).json({ ok: false, error: "Data buku tidak ditemukan di OpenLibrary/Google Books." });
+});

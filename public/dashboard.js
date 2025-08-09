@@ -136,22 +136,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   async function fetchBookFromISBN(isbn) {
-    try {
-      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
-      const data = await res.json();
-      const book = data[`ISBN:${isbn}`];
+       try {
+    const resp = await fetch(`/api/isbn/${isbn}`); // same-origin ke backend kamu
+    const json = await resp.json();
 
-      if (!book) return alert("Data buku tidak ditemukan");
-
-      document.getElementById("newTitle").value = book.title || '';
-      document.getElementById("newAuthor").value = book.authors?.map(a => a.name).join(', ') || '';
-      document.getElementById("newGenre").value = book.subjects?.[0]?.name || '';
-      document.getElementById("newDesc").value = `Diterbitkan oleh ${book.publishers?.[0]?.name || '-'} (${book.publish_date || '-'})`;
-    } catch (err) {
-      alert("Gagal mengambil data buku dari ISBN");
-      console.error(err);
+    if (!resp.ok || !json.ok) {
+      alert(json?.error || "Data buku tidak ditemukan.");
+      return false;
     }
+
+    const b = json.data;
+    console.log(b);
+    // Prefill form dari response
+    document.getElementById("newTitle").value  = b.title || "";
+    document.getElementById("newAuthor").value = (b.authors || []).join(", ");
+    document.getElementById("newGenre").value  = (b.categories && b.categories[0]) || "";
+
+    return true;
+  } catch (e) {
+    console.error("Lookup ISBN backend error:", e);
+    alert("Gagal mengambil data buku dari server.");
+    return false;
   }
+  }
+
 
   window.stopScan = function () {
   const modal = document.getElementById("scanModal");
