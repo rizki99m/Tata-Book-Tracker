@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let isMobileView = window.innerWidth < 768;
 
-  let videoStream;
+  let previewStream = null;
 
   window.toggleAddBookDropdown = function () {
     const dropdown = document.getElementById("addBookDropdown");
@@ -55,57 +55,84 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.startScanISBN = async function () {
-    toggleAddBookDropdown();
-    document.getElementById("scanModal").classList.remove("hidden");
+  // tutup dropdown kalau ada
+  if (typeof toggleAddBookDropdown === "function") toggleAddBookDropdown();
+  document.getElementById("scanModal").classList.remove("hidden");
 
-    const video = document.getElementById("preview");
-    try {
-      videoStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
-      video.srcObject = videoStream;
-    } catch (err) {
-      alert("Gagal mengakses kamera");
-      console.error(err);
-    }
+  const video = document.getElementById("preview");
+
+  // **penting untuk iPhone**
+  video.setAttribute("playsinline", true);
+  video.setAttribute("muted", true);
+  video.setAttribute("autoplay", true);
+
+  try {
+    // minta kamera belakang + resolusi ideal
+    previewStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+
+    video.srcObject = previewStream;
+
+    // Safari kadang butuh play() eksplisit
+    const p = video.play();
+    if (p && typeof p.then === "function") { await p; }
+  } catch (err) {
+    console.error("Gagal akses kamera:", err);
+    alert("Tidak bisa mengakses kamera. Cek izin kamera di browser/device kamu.");
+    window.stopScan();
   }
+};
 
   window.captureAndDecode = async function () {
     const video = document.getElementById("preview");
     const canvas = document.getElementById("captureCanvas");
     const ctx = canvas.getContext("2d");
 
+    if (!video.videoWidth || !video.videoHeight) {
+      console.warn("Video belum siap / belum punya ukuran.");
+      return alert("Kamera belum siap. Coba lagi sebentar.");
+    }
+
+    // Atur kanvas sesuai orientasi video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // Jika kamera depan, bisa mirror. Untuk environment biasanya tidak perlu.
+    // ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageDataUrl = canvas.toDataURL("image/png");
 
     Quagga.decodeSingle({
       src: imageDataUrl,
-      numOfWorkers: 0,
-      decoder: {
-        readers: ["ean_reader"]
-      },
-      locate: true
-    }, async function(result) {
-      if (result && result.codeResult) {
+      numOfWorkers: 0,                 // di main thread (stabil untuk sekali potret)
+      decoder: { readers: ["ean_reader"] }, // ISBN = EAN-13
+      locate: true,
+      inputStream: { size: 800 },      // resize internal agar stabil
+      locator: { patchSize: "medium", halfSample: true }
+    }, async function (result) {
+      if (result && result.codeResult && result.codeResult.code) {
         const code = result.codeResult.code;
         console.log("✅ ISBN Terbaca:", code);
         if (/^\d{10,13}$/.test(code)) {
           await fetchBookFromISBN(code);
-          stopScan();
+          window.stopScan();
           toggleForm(true);
         } else {
-          alert("Kode terbaca, tapi bukan ISBN valid");
+          alert("Kode terbaca, tapi bukan ISBN valid (10/13 digit).");
         }
       } else {
-        alert("Gagal mendeteksi barcode dari gambar");
-        console.warn(result);
+        console.warn("❌ Gagal mengenali, detail:", result);
+        alert("Barcode terdeteksi tapi belum terbaca. Coba potret ulang dengan pencahayaan/fokus lebih baik.");
       }
     });
-  }
-
+  };
 
 
   async function fetchBookFromISBN(isbn) {
@@ -127,12 +154,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.stopScan = function () {
-    if (videoStream) {
-      const tracks = videoStream.getTracks();
-      tracks.forEach(track => track.stop());
-    }
-    document.getElementById("scanModal").classList.add("hidden");
+  const modal = document.getElementById("scanModal");
+  if (previewStream) {
+    previewStream.getTracks().forEach(t => t.stop());
+    previewStream = null;
   }
+  const v = document.getElementById("preview");
+  if (v) {
+    v.pause?.();
+    v.srcObject = null;
+  }
+  modal.classList.add("hidden");
+};
 
   window.toggleForm = toggleForm;
 

@@ -119,23 +119,19 @@
     </div>
   </div>
 
-  <div id="scanModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-xl p-6 shadow w-[90vw] max-w-3xl relative">
-      
-      <!-- Tombol Tutup -->
-      <button onclick="stopScan()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">
-        ✕
-      </button>
+  <div id="scanModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl p-6 shadow w-[90vw] max-w-3xl relative">
+    <button onclick="stopScan()" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">✕</button>
 
-      <!-- Kontainer Kamera -->
-      <div id="scanner" class="w-full flex flex-col items-center gap-4">
-      <video id="preview" autoplay muted class="rounded-md shadow w-full max-w-md"></video>
-      <button onclick="captureAndDecode()" class="px-4 py-2 bg-violet-600 text-white rounded-lg">
+    <div id="scanner" class="w-full flex flex-col items-center gap-4">
+      <video id="preview" class="rounded-md shadow w-full max-w-md"></video>
+      <button onclick="captureAndDecode()"
+              class="px-4 py-2 bg-violet-600 text-white rounded-lg">
         📸 Ambil Foto & Scan
       </button>
       <canvas id="captureCanvas" class="hidden"></canvas>
     </div>
-    </div>
+  </div>
   </div>
 
 
